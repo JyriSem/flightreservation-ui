@@ -1,11 +1,16 @@
-<script setup>
-
-</script>
-
 <template>
-
+  <div>
+    <h1>Flight Reservation System</h1>
+    <FlightSearch />
+  </div>
 </template>
 
-<style scoped>
+<script>
+import FlightSearch from '../components/FlightSearch.vue';
 
-</style>
+export default {
+  components: {
+    FlightSearch
+  }
+};
+</script>

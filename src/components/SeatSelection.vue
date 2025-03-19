@@ -2,11 +2,16 @@
   <div class="seat-container">
     <h2>Seat Selection</h2>
     <div v-if="seats.length > 0">
-      <div class="seat-grid">
-        <div v-for="seat in seats" :key="seat.id"
-             :class="{ seat: true, occupied: seat.occupied, available: !seat.occupied, selected: seat.id === selectedSeat }"
-             @click="selectSeat(seat)">
-          {{ seat.rowNumber }}{{ seat.columnLetter }}
+      <div class="seat-map">
+        <div v-for="row in totalRows" :key="row" class="seat-row">
+          <div
+              v-for="seat in getSeatsForRow(row)"
+              :key="seat.id"
+              :class="['seat', { occupied: seat.occupied, available: !seat.occupied, selected: seat.id === selectedSeat }]"
+              @click="selectSeat(seat)"
+          >
+            {{ seat.columnLetter }}
+          </div>
         </div>
       </div>
       <button v-if="selectedSeat" @click="confirmSeat">Confirm Selection</button>
@@ -22,19 +27,24 @@ export default {
   data() {
     return {
       seats: [],
-      selectedSeat: null
+      selectedSeat: null,
+      totalRows: 22,
+      seatColumns: ['A', 'B', 'C', 'D', 'E', 'F']
     };
   },
   async created() {
-    const flightId = this.$route.params.flightId;
-    try {
-      const response = await axios.get(`http://localhost:8080/api/seats/${flightId}`);
-      this.seats = response.data;
-    } catch (error) {
-      console.error("Error fetching seats:", error);
-    }
+    await this.fetchSeats();
   },
   methods: {
+    async fetchSeats() {
+      const flightId = this.$route.params.flightId;
+      try {
+        const response = await axios.get(`http://localhost:8080/api/seats/flight/${flightId}`);
+        this.seats = response.data;
+      } catch (error) {
+        console.error("Error fetching seats:", error);
+      }
+    },
     selectSeat(seat) {
       if (!seat.occupied) {
         this.selectedSeat = seat.id;
@@ -42,6 +52,9 @@ export default {
     },
     confirmSeat() {
       alert(`Seat ${this.selectedSeat} confirmed!`);
+    },
+    getSeatsForRow(row) {
+      return this.seats.filter(seat => seat.rowNumber === row);
     }
   }
 };
@@ -51,29 +64,38 @@ export default {
 .seat-container {
   text-align: center;
 }
-.seat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 50px);
-  gap: 5px;
-  justify-content: center;
-  margin-top: 20px;
-}
-.seat {
-  width: 50px;
-  height: 50px;
-  border: 1px solid #333;
+
+.seat-map {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.seat-row {
+  display: flex;
   justify-content: center;
+  gap: 5px;
+}
+
+.seat {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  text-align: center;
+  line-height: 30px;
   cursor: pointer;
+  border: 1px solid black;
 }
+
 .occupied {
-  background-color: red;
-  pointer-events: none;
+  background-color: gray;
+  cursor: not-allowed;
 }
+
 .available {
-  background-color: lightgreen;
+  background-color: green;
 }
+
 .selected {
   background-color: blue;
   color: white;

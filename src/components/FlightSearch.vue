@@ -13,14 +13,19 @@
       </select>
 
       <label>Date:</label>
-      <input
-          type="date"
+      <Datepicker
           v-model="date"
-          :min="minDate"
-          :max="maxDate"
-          :disabled="!destination"
-          @change="validateDate"
+          :min-date="minDate"
+          :max-date="maxDate"
+          :enable-time-picker="false"
+          :disabled-dates="disabledDates"
+          placeholder="Select a date"
       />
+
+      <label>Tickets:</label>
+      <select v-model="ticketCount">
+        <option v-for="n in maxTickets" :key="n" :value="n">{{ n }}</option>
+      </select>
 
       <button type="submit" :disabled="!date">Search</button>
     </form>
@@ -30,7 +35,7 @@
       <ul>
         <li v-for="flight in flights" :key="flight.id">
           <span>{{ flight.departure }} → {{ flight.destination }}</span> |
-          <span>{{ formatDateTime(flight.departureDate, flight.departureTime) }}</span> |
+          <span>{{ formatDateTime(flight.departureTime) }}</span> |
           <span>Price: ${{ flight.price }}</span>
           <button @click="selectFlight(flight.id)">Select</button>
         </li>
@@ -41,8 +46,13 @@
 
 <script>
 import axios from "axios";
+import Datepicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 
 export default {
+  components: {
+    Datepicker,
+  },
   data() {
     return {
       departures: [],
@@ -50,16 +60,27 @@ export default {
       availableDates: [],
       departure: "",
       destination: "",
-      date: "",
-      flights: []
+      date: null,
+      ticketCount: 1,
+      maxTickets: 5,
+      flights: [],
     };
   },
   computed: {
     minDate() {
-      return this.availableDates.length ? this.availableDates[0] : "";
+      return this.availableDates.length ? new Date(this.availableDates[0]) : null;
     },
     maxDate() {
-      return this.availableDates.length ? this.availableDates[this.availableDates.length - 1] : "";
+      return this.availableDates.length ? new Date(this.availableDates[this.availableDates.length - 1]) : null;
+    },
+    disabledDates() {
+      const availableSet = new Set(this.availableDates.map(d => new Date(d).toISOString().split("T")[0]));
+      const allDates = [...Array(365)].map((_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() + i);
+        return date.toISOString().split("T")[0];
+      });
+      return allDates.filter(date => !availableSet.has(date));
     }
   },
   methods: {
@@ -75,11 +96,11 @@ export default {
       if (!this.departure) return;
       try {
         const response = await axios.get("http://localhost:8080/api/flights/destinations", {
-          params: { departure: this.departure }
+          params: {departure: this.departure},
         });
         this.destinations = response.data;
         this.destination = "";
-        this.date = "";
+        this.date = null;
       } catch (error) {
         console.error("Error fetching destinations:", error);
       }
@@ -88,19 +109,22 @@ export default {
       if (!this.departure || !this.destination) return;
       try {
         const response = await axios.get("http://localhost:8080/api/flights/dates", {
-          params: { departure: this.departure, destination: this.destination }
+          params: {departure: this.departure, destination: this.destination},
         });
         this.availableDates = response.data;
-        this.date = "";
+        this.date = null;
       } catch (error) {
         console.error("Error fetching dates:", error);
       }
     },
     async searchFlights() {
-      if (!this.date) return;
       try {
         const response = await axios.get("http://localhost:8080/api/flights/search", {
-          params: { departure: this.departure, destination: this.destination, date: this.date }
+          params: {
+            departure: this.departure,
+            destination: this.destination,
+            date: this.date.toISOString().split("T")[0]
+          },
         });
         this.flights = response.data;
       } catch (error) {
@@ -108,15 +132,10 @@ export default {
       }
     },
     selectFlight(flightId) {
-      this.$router.push({ path: `/seats/${flightId}` });
+      this.$router.push({path: `/seats/${flightId}`, query: {ticketCount: this.ticketCount}});
     },
-    formatDateTime(date, time) {
-      return `${date} at ${time}`;
-    },
-    validateDate() {
-      if (!this.availableDates.includes(this.date)) {
-        this.date = "";
-      }
+    formatDateTime(dateTime) {
+      return new Date(dateTime).toLocaleString();
     }
   },
   mounted() {
@@ -127,14 +146,14 @@ export default {
 
 <style scoped>
 .search-container {
-  max-width: 450px;
+  max-width: 400px;
   margin: auto;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  background-color: #f9f9f9;
 }
+
 button {
-  margin-top: 10px;
+  margin-left: 10px;
 }
 </style>

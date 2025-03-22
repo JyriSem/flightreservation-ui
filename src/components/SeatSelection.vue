@@ -1,39 +1,54 @@
 <template>
   <div class="seat-container">
     <h2>Seat Selection</h2>
+    <p>Pick {{ ticketCount }} seat(s)</p>
+
     <div v-if="seats.length > 0">
       <div class="seat-map">
         <div v-for="row in totalRows" :key="row" class="seat-row">
           <div
               v-for="seat in getSeatsForRow(row)"
               :key="seat.id"
-              :class="['seat', { occupied: seat.occupied, available: !seat.occupied, selected: seat.id === selectedSeat }]"
+              :class="[
+                'seat',
+                { occupied: seat.occupied, available: !seat.occupied, selected: selectedSeats.includes(seat.id), disabled: selectedSeats.length >= ticketCount && !selectedSeats.includes(seat.id) }
+              ]"
               @click="selectSeat(seat)"
           >
             {{ seat.columnLetter }}
           </div>
         </div>
       </div>
-      <button v-if="selectedSeat" @click="confirmSeat">Confirm Selection</button>
+
+      <div class="selected-seats">
+        <h3>Selected Seats:</h3>
+        <p v-if="selectedSeats.length === 0">None</p>
+        <p v-else>{{ selectedSeats.map(getSeatLabel).join(", ") }}</p>
+      </div>
+
+      <button v-if="selectedSeats.length === ticketCount" @click="confirmSeats">Confirm Selection</button>
     </div>
+
     <p v-else>No available seats.</p>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+import axios from "axios";
 
 export default {
   data() {
     return {
       seats: [],
-      selectedSeat: null,
+      selectedSeats: [],
+      ticketCount: 1,
       totalRows: 22,
-      seatColumns: ['A', 'B', 'C', 'D', 'E', 'F']
+      seatColumns: ["A", "B", "C", "D", "E", "F"],
     };
   },
-  async created() {
-    await this.fetchSeats();
+  created() {
+    this.fetchSeats();
+    this.ticketCount = parseInt(this.$route.query.ticketCount) || 1;
   },
   methods: {
     async fetchSeats() {
@@ -46,15 +61,23 @@ export default {
       }
     },
     selectSeat(seat) {
-      if (!seat.occupied) {
-        this.selectedSeat = seat.id;
+      if (seat.occupied || (this.selectedSeats.length >= this.ticketCount && !this.selectedSeats.includes(seat.id))) return;
+
+      if (this.selectedSeats.includes(seat.id)) {
+        this.selectedSeats = this.selectedSeats.filter(s => s !== seat.id);
+      } else {
+        this.selectedSeats.push(seat.id);
       }
     },
-    confirmSeat() {
-      alert(`Seat ${this.selectedSeat} confirmed!`);
+    confirmSeats() {
+      alert(`Seats ${this.selectedSeats.map(this.getSeatLabel).join(", ")} confirmed!`);
     },
     getSeatsForRow(row) {
       return this.seats.filter(seat => seat.rowNumber === row);
+    },
+    getSeatLabel(seatId) {
+      const seat = this.seats.find(s => s.id === seatId);
+      return seat ? `${seat.rowNumber}${seat.columnLetter}` : "";
     }
   }
 };
@@ -99,5 +122,14 @@ export default {
 .selected {
   background-color: blue;
   color: white;
+}
+
+.disabled {
+  background-color: lightgray;
+  cursor: not-allowed;
+}
+
+.selected-seats {
+  margin-top: 15px;
 }
 </style>

@@ -10,9 +10,14 @@
               v-for="seat in getSeatsForRow(row)"
               :key="seat.id"
               :class="[
-                'seat',
-                { occupied: seat.occupied, available: !seat.occupied, selected: selectedSeats.includes(seat.id), disabled: selectedSeats.length >= ticketCount && !selectedSeats.includes(seat.id) }
-              ]"
+              'seat',
+              {
+                occupied: seat.occupied,
+                available: !seat.occupied,
+                selected: selectedSeats.includes(seat.id),
+                recommended: recommendedSeats.includes(seat.id),
+              }
+            ]"
               @click="selectSeat(seat)"
           >
             {{ seat.columnLetter }}
@@ -41,14 +46,15 @@ export default {
     return {
       seats: [],
       selectedSeats: [],
+      recommendedSeats: [],
       ticketCount: 1,
-      totalRows: 22,
-      seatColumns: ["A", "B", "C", "D", "E", "F"],
+      totalRows: 0,
+      seatColumns: [],
     };
   },
   created() {
-    this.fetchSeats();
     this.ticketCount = parseInt(this.$route.query.ticketCount) || 1;
+    this.fetchSeats();
   },
   methods: {
     async fetchSeats() {
@@ -56,28 +62,59 @@ export default {
       try {
         const response = await axios.get(`http://localhost:8080/api/seats/flight/${flightId}`);
         this.seats = response.data;
+
+        // Dynamically set total rows & seat columns
+        this.totalRows = Math.max(...this.seats.map(seat => seat.rowNumber), 0);
+        this.seatColumns = [...new Set(this.seats.map(seat => seat.columnLetter))].sort();
+
+        this.recommendSeats();
       } catch (error) {
         console.error("Error fetching seats:", error);
       }
     },
     selectSeat(seat) {
-      if (seat.occupied || (this.selectedSeats.length >= this.ticketCount && !this.selectedSeats.includes(seat.id))) return;
+      if (seat.occupied) return;
 
       if (this.selectedSeats.includes(seat.id)) {
         this.selectedSeats = this.selectedSeats.filter(s => s !== seat.id);
-      } else {
+      } else if (this.selectedSeats.length < this.ticketCount) {
         this.selectedSeats.push(seat.id);
+      }
+
+      // Clear recommendations when manual selection starts
+      if (this.selectedSeats.length > 0) {
+        this.recommendedSeats = [];
+      } else {
+        this.recommendSeats();
       }
     },
     confirmSeats() {
       alert(`Seats ${this.selectedSeats.map(this.getSeatLabel).join(", ")} confirmed!`);
     },
     getSeatsForRow(row) {
-      return this.seats.filter(seat => seat.rowNumber === row);
+      return this.seats.filter(seat => seat.rowNumber === row).sort((a, b) => a.columnLetter.localeCompare(b.columnLetter));
     },
     getSeatLabel(seatId) {
       const seat = this.seats.find(s => s.id === seatId);
       return seat ? `${seat.rowNumber}${seat.columnLetter}` : "";
+    },
+    recommendSeats() {
+      this.recommendedSeats = [];
+
+      if (this.ticketCount <= 1 || this.selectedSeats.length > 0) return;
+
+      for (let row = 1; row <= this.totalRows; row++) {
+        const rowSeats = this.getSeatsForRow(row).filter(seat => !seat.occupied);
+
+        for (let i = 0; i <= rowSeats.length - this.ticketCount; i++) {
+          const group = rowSeats.slice(i, i + this.ticketCount);
+          const hasOccupiedBetween = group.some(seat => seat.occupied);
+
+          if (!hasOccupiedBetween) {
+            this.recommendedSeats.push(...group.map(seat => seat.id));
+          }
+        }
+      }
     }
   }
 };
@@ -124,12 +161,7 @@ export default {
   color: white;
 }
 
-.disabled {
-  background-color: lightgray;
-  cursor: not-allowed;
-}
-
-.selected-seats {
-  margin-top: 15px;
+.recommended {
+  background-color: yellow;
 }
 </style>

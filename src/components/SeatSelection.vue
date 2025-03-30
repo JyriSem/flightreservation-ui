@@ -1,6 +1,21 @@
 <template>
+
+  <!--
+  Istekohtade kuvamine, kui vabade istekohtade arv on 0-st suurem.
+  -->
   <div class="seat-container">
     <div v-if="seats.length > 0" class="seat-content">
+
+      <!--
+      Struktuur:
+      - istmeruudustik;
+      - külgede märgistamine;
+      - ridade ja iga rea istmete tsüklid;
+      - dünaamilised klassid;
+      - eri-atribuudid;
+      - istekoha valiku lülitus;
+      - istmete sildistamine;
+      -->
       <div class="seat-map">
         <div class="plane-layout">
           <span class="side-label left">Left Side</span>
@@ -36,6 +51,10 @@
         </div>
       </div>
 
+      <!--
+      Valitavate istekohtade arv / loend / koguhind.
+      Kinnitus lubatud, kui vastavd tingimused on täidetud.
+      -->
       <div class="selection-summary">
         <h2>Select Your Seats</h2>
         <p>Pick {{ ticketCount }} seat(s)</p>
@@ -54,6 +73,10 @@
         >
           Confirm Selection
         </button>
+
+        <!--
+        Istekohtade kuvamine värviliste indikaatoritega.
+        -->
         <div class="legend">
           <h2>Plane Legend</h2>
           <span class="legend-item"><span class="window-seat-left"></span> Window (W)</span>
@@ -67,6 +90,9 @@
       </div>
     </div>
 
+    <!--
+    Veateate kuvamine, kui andmed puuduvad.
+    -->
     <div v-else class="no-seats">
       <p>No available seats for this flight.</p>
     </div>
@@ -74,8 +100,14 @@
 </template>
 
 <script>
+
+//Importimine:
+//- axios HTTP päringute jaoks;
 import axios from "axios";
 
+//Reaktiivsete andmete atribuudid:
+//- istekoha, valitud- ja soovitatud istekoha, piletite ja istmete massiivid;
+//- algväärtused ja limiidid.
 export default {
   data() {
     return {
@@ -87,11 +119,17 @@ export default {
       seatColumns: [],
     };
   },
+
+  //Piletite hulga kaasamine marsruudi päringul istekohtade valikusse.
   created() {
     this.ticketCount = parseInt(this.$route.query.ticketCount) || 1;
     this.fetchSeats();
   },
   methods: {
+
+    //Kõik lennu istekohad "flightId" alusel.
+    //Maksimaalse ridade arv ja sorteeritud kordumatud veerud.
+    //Istekohtade soovitamine.
     async fetchSeats() {
       const flightId = this.$route.params.flightId;
       try {
@@ -104,6 +142,10 @@ export default {
         console.error("Error fetching seats:", error);
       }
     },
+
+    //Istekoha lüliti:
+    //- hõivatud istekohtade ignoreerimine;
+    //- valiku tegemisel istekoha eemaldamine / sidumata piletite arvu kohandamine / soovituse väljalülimine.
     selectSeat(seat) {
       if (seat.occupied) return;
 
@@ -118,16 +160,24 @@ export default {
         this.recommendSeats();
       }
     },
+
+    //Märguande kuvamine valitud istekohtade ja koguhinnaga.
     confirmSeats() {
       alert(`Seats ${this.selectedSeats.map(this.getSeatLabel).join(", ")} confirmed! Total: $${this.selectedSeats.reduce((sum, id) => sum + Number(this.seats.find(s => s.id === id).price), 0).toFixed(2)}`);
     },
+
+    //Kindla rea kohtade tagastamine, sorteeritud veerutähe järgi (A-F).
     getSeatsForRow(row) {
       return this.seats.filter(seat => seat.rowNumber === row).sort((a, b) => a.columnLetter.localeCompare(b.columnLetter));
     },
+
+    //Istekoha "id" konverteerimine sildiks ("1A").
     getSeatLabel(seatId) {
       const seat = this.seats.find(s => s.id === seatId);
       return seat ? `${seat.rowNumber}${seat.columnLetter}` : "";
     },
+
+    //Vabade kohtade rühma soovitamine, vastavalt piletite arvule, kui ühtegi istekohta ei ole valitud ja piletite arv on suurem kui 1.
     recommendSeats() {
       this.recommendedSeats = [];
       if (this.ticketCount <= 1 || this.selectedSeats.length > 0) return;
@@ -146,6 +196,9 @@ export default {
 };
 </script>
 
+<!--
+Stiil
+-->
 <style scoped>
 .seat-container {
   max-width: 800px;

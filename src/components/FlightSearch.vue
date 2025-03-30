@@ -2,6 +2,10 @@
   <div class="search-container">
     <h2>Find Your Flight</h2>
 
+    <!--
+    Lähtelinna rippmenüü:
+    - andmete saadavusel täidetakse väli andmetega / andmete puudumisel on välja kasutamine lukustatud.
+    -->
     <div class="search-form">
       <div class="form-group">
         <label>From</label>
@@ -11,6 +15,11 @@
         </select>
       </div>
 
+      <!--
+      Sihtlinna rippmenüü:
+      - andmete saadavusel täidetakse väli andmetega / andmete puudumisel või laadimisel on välja kasutamine lukustatud;
+      - kuupäevade värskendamine vastavalt kasutaja tehtud valikule.
+      -->
       <div class="form-group">
         <label>To</label>
         <select v-model="destination" :disabled="!departure || loading" @change="fetchAvailableDates">
@@ -19,6 +28,9 @@
         </select>
       </div>
 
+      <!--
+      Piletite hulga valimise rippmenüü:
+      -->
       <div class="form-group">
         <label>Tickets</label>
         <select v-model="ticketCount" :disabled="loading">
@@ -26,6 +38,16 @@
         </select>
       </div>
 
+      <!--
+      Komponendi @vuepic/vue-datepicker rakendamine:
+      - kuupäevaga sidumine;
+      - saadaolevate kuupäevade vahemiku piiramine;
+      - ainult kuupäevade kuvamine;
+      - mitte saadavalolevate kuupäevade keelamine;
+      - kalendri kohene kuvamine;
+      - kohene valiku rakendamine;
+      - keelatud, kui API on andmevahetuses.
+      -->
       <div class="calendar-group">
         <h3>Select Date</h3>
         <Datepicker
@@ -41,13 +63,30 @@
         />
       </div>
 
+      <!--
+      Otsingu käivitamine:
+      - keelatud, kui kõik väljad pole täidetud või toimub laadimine;
+      - API andmevahetuse info kuvamine või andmete kuvamine.
+      -->
       <button @click="searchFlights" :disabled="!canSearch || loading">
         {{ loading ? 'Searching...' : 'Search Flights' }}
       </button>
     </div>
 
+    <!--
+    Veateate kuvamine, kui tõrge on määratud.
+    -->
     <div v-if="error" class="error-message">{{ error }}</div>
 
+    <!--
+    Tulemuste kuvamine:
+    - juhul kui päring saab vastuse;
+    - mitme lennu kuvamine, kui kriteeriumid kattuvad;
+    - marsruudi kuvamine lähtelinnast sihtlinna;
+    - vormindakse kuvamiseks kuupäev ja kellaaeg;
+    - alghinna kuvamine (eeldusel, et istekohtade arv on 132);
+    - navigeerimine istekohtade valikusse.
+    -->
     <div v-if="flights.length > 0" class="results">
       <h3>Available Flights</h3>
       <div class="flight-list">
@@ -65,10 +104,17 @@
 </template>
 
 <script>
+
+//Importimised:
+//- axios HTTP päringute jaoks;
+//- komponendi Datepicker registreerimine.
 import axios from "axios";
 import Datepicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 
+//Reaktiivsete andmete atribuudid:
+//- väljumised, sihtkohad, saadaolevadKuupäevad: massiivid rippmenüüde ja kuupäevade filtreerimiseks;
+//- algväärtused ja limiidid.
 export default {
   components: {Datepicker},
   data() {
@@ -87,12 +133,16 @@ export default {
     };
   },
   computed: {
+
+    //Saadavalolevate kuupäevade põhjal määratud valiku vahemik.
     minDate() {
       return this.availableDates.length ? new Date(this.availableDates[0]) : null;
     },
     maxDate() {
       return this.availableDates.length ? new Date(this.availableDates[this.availableDates.length - 1]) : null;
     },
+
+    //365 päeva massiivi loomine, mittesaadavate kuupäevade filtreerimine ja nende keelamine.
     disabledDates() {
       const availableSet = new Set(this.availableDates.map(d => new Date(d).toISOString().split("T")[0]));
       const allDates = [...Array(365)].map((_, i) => {
@@ -102,11 +152,15 @@ export default {
       });
       return allDates.filter(date => !availableSet.has(date));
     },
+
+    //Kõikide väljade täitmise kontroll.
     canSearch() {
       return this.departure && this.destination && this.date;
     },
   },
   methods: {
+
+    //Lähtelinnade andmete päring / üleandmisvead / laadimine.
     async fetchDepartures() {
       this.loading = true;
       this.error = null;
@@ -120,6 +174,8 @@ export default {
         this.loading = false;
       }
     },
+
+    //Sihtlinnad vastavalt lähtelinnale / väljade lähtestamine / üleandmisvead / laadimine.
     async fetchDestinations() {
       if (!this.departure) return;
       this.loading = true;
@@ -139,6 +195,7 @@ export default {
         this.loading = false;
       }
     },
+    //Marsruudi saadaolevad kuupäevad / kuupäeva lähtestamine / üleandmisvead / laadimine.
     async fetchAvailableDates() {
       if (!this.departure || !this.destination) return;
       this.loading = true;
@@ -156,6 +213,8 @@ export default {
         this.loading = false;
       }
     },
+
+    //Lendude osting valitud kriteeriumide alusel / värskendamine / üleandmisvead / laadimine.
     async searchFlights() {
       if (!this.canSearch) return;
       this.loading = true;
@@ -177,20 +236,29 @@ export default {
         this.loading = false;
       }
     },
+
+    //Navigeerimine istekoha valikusse "flightId" alusel, kaasates parameeteri piletite hulk "ticketCount".
     selectFlight(flightId) {
       this.$router.push({path: `/seats/${flightId}`, query: {ticketCount: this.ticketCount}});
     },
+
+    //Väljumiskuupäeva ja kellaaja vormindamine.
     formatDateTime(flight) {
       const dateTimeString = `${flight.departureDate}T${flight.departureTime}`;
       return new Date(dateTimeString).toLocaleString();
     },
   },
+
+  //Kutsub fetchDepartures, kui komponent ühendatakse algandmete laadimiseks.
   mounted() {
     this.fetchDepartures();
   },
 };
 </script>
 
+<!--
+Stiil
+-->
 <style scoped>
 .search-container {
   max-width: 800px;

@@ -1,7 +1,6 @@
 <template>
   <div>
-    <h1>Flight Reservation System</h1>
-    <FlightSearch />
+    <FlightSearch/>
   </div>
 </template>
 

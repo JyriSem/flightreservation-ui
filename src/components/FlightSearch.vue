@@ -70,7 +70,7 @@ import Datepicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 
 export default {
-  components: { Datepicker },
+  components: {Datepicker},
   data() {
     return {
       departures: [],
@@ -129,7 +129,7 @@ export default {
       this.date = null;
       try {
         const response = await axios.get("http://localhost:8080/api/flights/destinations", {
-          params: { departure: this.departure },
+          params: {departure: this.departure},
         });
         this.destinations = response.data;
       } catch (error) {
@@ -146,7 +146,7 @@ export default {
       this.date = null;
       try {
         const response = await axios.get("http://localhost:8080/api/flights/dates", {
-          params: { departure: this.departure, destination: this.destination },
+          params: {departure: this.departure, destination: this.destination},
         });
         this.availableDates = response.data;
       } catch (error) {
@@ -178,7 +178,7 @@ export default {
       }
     },
     selectFlight(flightId) {
-      this.$router.push({ path: `/seats/${flightId}`, query: { ticketCount: this.ticketCount } });
+      this.$router.push({path: `/seats/${flightId}`, query: {ticketCount: this.ticketCount}});
     },
     formatDateTime(flight) {
       const dateTimeString = `${flight.departureDate}T${flight.departureTime}`;
@@ -193,7 +193,7 @@ export default {
 
 <style scoped>
 .search-container {
-  max-width: 800px; /* Wider for calendar */
+  max-width: 800px;
   margin: 20px auto;
   padding: 20px;
   background: #f9f9f9;
@@ -203,8 +203,8 @@ export default {
 
 .search-form {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr; /* Three columns for inputs */
-  gap: 20px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 15px;
   align-items: start;
 }
 
@@ -222,16 +222,20 @@ export default {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .calendar-group {
-  grid-column: span 3; /* Full width for calendar */
+  grid-column: span 3;
   text-align: center;
 }
 
+.calendar-group h3 {
+  margin: 10px 0;
+}
+
 button {
-  grid-column: span 3; /* Full width */
+  grid-column: span 3;
   padding: 10px;
   background: #007bff;
   color: white;
@@ -266,7 +270,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
+  padding: 10px;
   background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -279,20 +283,56 @@ button:disabled {
 
 .route {
   font-weight: bold;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .time {
   color: #555;
+  font-size: 14px;
 }
 
 .price {
   color: #28a745;
   font-weight: bold;
+  font-size: 14px;
 }
 
 .flight-card button {
-  padding: 8px 16px;
+  padding: 6px 12px;
   background: #28a745;
+}
+
+@media (max-width: 600px) {
+  .search-container {
+    max-width: 100%;
+    margin: 10px;
+    padding: 15px;
+  }
+
+  .search-form {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .calendar-group {
+    grid-column: span 1;
+  }
+
+  button {
+    grid-column: span 1;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .flight-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px;
+  }
+
+  .flight-card button {
+    margin-top: 10px;
+    width: 100%;
+  }
 }
 </style>

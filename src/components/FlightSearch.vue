@@ -84,7 +84,7 @@
     - mitme lennu kuvamine, kui kriteeriumid kattuvad;
     - marsruudi kuvamine lähtelinnast sihtlinna;
     - vormindakse kuvamiseks kuupäev ja kellaaeg;
-    - alghinna kuvamine (eeldusel, et istekohtade arv on 132);
+    - alghinna kuvamine vastavalt istekohtade arvule;
     - navigeerimine istekohtade valikusse.
     -->
     <div v-if="flights.length > 0" class="results">
@@ -94,7 +94,7 @@
           <div class="flight-info">
             <span class="route">{{ flight.departure }} → {{ flight.destination }}</span>
             <span class="time">{{ formatDateTime(flight) }}</span>
-            <span class="price">From ${{ (Number(flight.price) / 132).toFixed(2) }}</span>
+            <span class="price">From ${{ (Number(flight.price) / flight.totalSeats).toFixed(2) }}</span>
           </div>
           <button @click="selectFlight(flight.id)" :disabled="loading">Select</button>
         </div>

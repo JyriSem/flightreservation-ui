@@ -20,7 +20,7 @@
             ]"
               @click="selectSeat(seat)"
           >
-            {{ seat.columnLetter }}
+            {{ seat.columnLetter }} - ${{ seat.price }}
           </div>
         </div>
       </div>
@@ -29,6 +29,10 @@
         <h3>Selected Seats:</h3>
         <p v-if="selectedSeats.length === 0">None</p>
         <p v-else>{{ selectedSeats.map(getSeatLabel).join(", ") }}</p>
+      </div>
+
+      <div class="total">
+        Total: ${{ selectedSeats.reduce((sum, id) => sum + seats.find(s => s.id === id).price, 0) }}
       </div>
 
       <button v-if="selectedSeats.length === ticketCount" @click="confirmSeats">Confirm Selection</button>
@@ -62,11 +66,8 @@ export default {
       try {
         const response = await axios.get(`http://localhost:8080/api/seats/flight/${flightId}`);
         this.seats = response.data;
-
-        // Dynamically set total rows & seat columns
         this.totalRows = Math.max(...this.seats.map(seat => seat.rowNumber), 0);
         this.seatColumns = [...new Set(this.seats.map(seat => seat.columnLetter))].sort();
-
         this.recommendSeats();
       } catch (error) {
         console.error("Error fetching seats:", error);
@@ -80,8 +81,6 @@ export default {
       } else if (this.selectedSeats.length < this.ticketCount) {
         this.selectedSeats.push(seat.id);
       }
-
-      // Clear recommendations when manual selection starts
       if (this.selectedSeats.length > 0) {
         this.recommendedSeats = [];
       } else {
@@ -100,16 +99,12 @@ export default {
     },
     recommendSeats() {
       this.recommendedSeats = [];
-
       if (this.ticketCount <= 1 || this.selectedSeats.length > 0) return;
-
       for (let row = 1; row <= this.totalRows; row++) {
         const rowSeats = this.getSeatsForRow(row).filter(seat => !seat.occupied);
-
         for (let i = 0; i <= rowSeats.length - this.ticketCount; i++) {
           const group = rowSeats.slice(i, i + this.ticketCount);
           const hasOccupiedBetween = group.some(seat => seat.occupied);
-
           if (!hasOccupiedBetween) {
             this.recommendedSeats.push(...group.map(seat => seat.id));
           }
@@ -138,7 +133,7 @@ export default {
 }
 
 .seat {
-  width: 30px;
+  width: 77px;
   height: 30px;
   border-radius: 5px;
   text-align: center;
@@ -163,5 +158,10 @@ export default {
 
 .recommended {
   background-color: yellow;
+}
+
+.total {
+  margin-top: 10px;
+  font-weight: bold;
 }
 </style>

@@ -1,5 +1,24 @@
-# Vue 3 + Vite
+Enne projekti seadistamist veenduge, et teil on installitud järgmine:
+Java 21 - Spring Boot taustaprogrammi käitamiseks;
+Gradle 8.x - Backendi ehitamiseks;
+PostgreSQL 15.x või uuem - andmebaasi jaoks;
+Node.js 18.x või uuem - Vue.js kasutajaliidese käitamiseks;
+npm 8.x või uuem - kaasas Node.js kasutajaliidese haldamiseks;
+Git - hoidla kloonimiseks;
+Kaasaegne veebibrauser;
+IntelliJ IDEA.
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Hoidla kloonimine:
+https://github.com/JyriSem/flightreservation-ui.git
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+Node.js ja npm kontroll / bash:
+node -v
+npm -v
+
+Installi sõltuvused / bash:
+npm install
+npm install vue vue-router axios @vuepic/vue-datepicker
+npm install --save-dev @vitejs/plugin-vue vite
+
+Käivitage Spring Boot rakendus enne Vite/Vue kasutajaliidest,
+veenduge andmebaasi kättesaadavuses ja käivitage "flightreservation-ui" rakendus.
